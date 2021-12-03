@@ -1,0 +1,32 @@
+
+<table style="text-align:center"><tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="5"><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="5" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td colspan="5">stancoeff</td></tr>
+<tr><td style="text-align:left"></td><td colspan="5"><em>linear</em></td></tr>
+<tr><td style="text-align:left"></td><td colspan="5"><em>mixed-effects</em></td></tr>
+<tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td><td>(3)</td><td>(4)</td><td>(5)</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">pre_var</td><td>0.017<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">rapidonset</td><td>0.015<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td><td>0.015<sup>***</sup> (0.002)</td><td>0.014<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">tem_lev</td><td>0.018<sup>***</sup> (0.002)</td><td>0.017<sup>***</sup> (0.002)</td><td>0.018<sup>***</sup> (0.002)</td><td>0.018<sup>***</sup> (0.002)</td><td>0.017<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">tem_var</td><td>0.015<sup>***</sup> (0.002)</td><td>0.014<sup>***</sup> (0.002)</td><td>0.014<sup>***</sup> (0.002)</td><td>0.014<sup>***</sup> (0.002)</td><td>0.013<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">env_lag_dum</td><td></td><td>-0.001 (0.001)</td><td>-0.0004 (0.001)</td><td>-0.0005 (0.001)</td><td>-0.001 (0.001)</td></tr>
+<tr><td style="text-align:left">env_timespan_dum</td><td></td><td>-0.016<sup>***</sup> (0.003)</td><td>-0.016<sup>***</sup> (0.003)</td><td>-0.017<sup>***</sup> (0.003)</td><td>-0.011<sup>***</sup> (0.003)</td></tr>
+<tr><td style="text-align:left">env_other_dum</td><td></td><td>-0.002 (0.002)</td><td>-0.003 (0.002)</td><td>-0.003 (0.002)</td><td>-0.003 (0.002)</td></tr>
+<tr><td style="text-align:left">internal</td><td></td><td></td><td>0.005<sup>**</sup> (0.002)</td><td>0.005<sup>**</sup> (0.002)</td><td>0.006<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">dest_low</td><td></td><td></td><td>0.061<sup>***</sup> (0.010)</td><td>0.060<sup>***</sup> (0.010)</td><td>0.057<sup>***</sup> (0.009)</td></tr>
+<tr><td style="text-align:left">dest_high</td><td></td><td></td><td>0.022<sup>**</sup> (0.009)</td><td>0.022<sup>**</sup> (0.010)</td><td>0.020<sup>**</sup> (0.010)</td></tr>
+<tr><td style="text-align:left">dest_ambi</td><td></td><td></td><td>0.011 (0.014)</td><td>0.011 (0.014)</td><td>0.008 (0.014)</td></tr>
+<tr><td style="text-align:left">nonoecd</td><td></td><td></td><td></td><td>0.006<sup>***</sup> (0.002)</td><td></td></tr>
+<tr><td style="text-align:left">L</td><td></td><td></td><td></td><td></td><td>-0.073<sup>***</sup> (0.011)</td></tr>
+<tr><td style="text-align:left">LM</td><td></td><td></td><td></td><td></td><td>0.014<sup>***</sup> (0.005)</td></tr>
+<tr><td style="text-align:left">UM</td><td></td><td></td><td></td><td></td><td>0.044<sup>***</sup> (0.007)</td></tr>
+<tr><td style="text-align:left">agr</td><td></td><td></td><td></td><td></td><td>0.103<sup>***</sup> (0.013)</td></tr>
+<tr><td style="text-align:left">conflict_mepv_5</td><td></td><td></td><td></td><td></td><td>-0.023<sup>***</sup> (0.006)</td></tr>
+<tr><td style="text-align:left">Constant</td><td>-0.001 (0.015)</td><td>0.009 (0.014)</td><td>-0.031<sup>*</sup> (0.016)</td><td>-0.036<sup>**</sup> (0.017)</td><td>-0.036<sup>**</sup> (0.017)</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>1,803</td><td>1,803</td><td>1,803</td><td>1,803</td><td>1,803</td></tr>
+<tr><td style="text-align:left">Log Likelihood</td><td>2,288.713</td><td>2,290.337</td><td>2,297.138</td><td>2,297.263</td><td>2,321.092</td></tr>
+<tr><td style="text-align:left">Akaike Inf. Crit.</td><td>-4,551.427</td><td>-4,548.674</td><td>-4,554.277</td><td>-4,552.526</td><td>-4,592.184</td></tr>
+<tr><td style="text-align:left">Bayesian Inf. Crit.</td><td>-4,479.963</td><td>-4,460.719</td><td>-4,444.333</td><td>-4,437.084</td><td>-4,454.753</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td colspan="5" style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+<tr><td style="text-align:left"></td><td colspan="5" style="text-align:right">Test</td></tr>
+</table>

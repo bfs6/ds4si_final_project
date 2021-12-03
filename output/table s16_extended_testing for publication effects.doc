@@ -1,0 +1,16 @@
+
+<table style="text-align:center"><tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="4"><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="4" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td>stancoeff</td><td>stancoeff.abs</td><td>stancoeff</td><td>stancoeff.abs</td></tr>
+<tr><td style="text-align:left"></td><td><em>linear</em></td><td><em>linear</em></td><td><em>linear</em></td><td><em>linear</em></td></tr>
+<tr><td style="text-align:left"></td><td><em>mixed-effects</em></td><td><em>mixed-effects</em></td><td><em>mixed-effects</em></td><td><em>mixed-effects</em></td></tr>
+<tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td><td>(3)</td><td>(4)</td></tr>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">published1</td><td>0.005 (0.013)</td><td>0.002 (0.022)</td><td>0.006 (0.013)</td><td>0.004 (0.022)</td></tr>
+<tr><td style="text-align:left">Constant</td><td>0.006 (0.012)</td><td>0.038<sup>*</sup> (0.020)</td><td>0.009 (0.018)</td><td>0.055<sup>**</sup> (0.027)</td></tr>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>1,803</td><td>1,803</td><td>1,803</td><td>1,803</td></tr>
+<tr><td style="text-align:left">Log Likelihood</td><td>2,268.221</td><td>2,487.625</td><td>2,253.286</td><td>2,483.213</td></tr>
+<tr><td style="text-align:left">Akaike Inf. Crit.</td><td>-4,528.442</td><td>-4,967.249</td><td>-4,486.573</td><td>-4,946.426</td></tr>
+<tr><td style="text-align:left">Bayesian Inf. Crit.</td><td>-4,506.453</td><td>-4,945.260</td><td>-4,431.601</td><td>-4,891.454</td></tr>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td colspan="4" style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+<tr><td style="text-align:left"></td><td colspan="4" style="text-align:right">Test</td></tr>
+</table>
