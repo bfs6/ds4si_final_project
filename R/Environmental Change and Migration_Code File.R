@@ -362,7 +362,6 @@ pred1a <- func.lmer("stancoeff", c(con_base, con_context2)) # including only com
 pred1b <- lmer(pred1a, data = dat , weights=wt)
 summary(pred1b)
 
-
 pred1b_coef <- coefficients(pred1b)
 
 dat.predict <- 
@@ -380,7 +379,8 @@ summary(dat.predict$predict)
 
 
 ## Plotting predicted effect sizes
-plot1 <- dat.predict %>% 
+plot1 <- 
+  dat.predict %>% 
   filter(agr<0.5 & conflict_mepv_5<0.5) %>% 
   ggplot(aes(y=predict, x=M))+
   geom_hline(yintercept = 0) +

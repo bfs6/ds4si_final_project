@@ -4,28 +4,6 @@
 ### AUTHORS: Hoffmann, R., Dimitrova, A., Muttarak, R., Crespo-Cuaresma, J., Peisker, J. 
 ###
 
-# >>> Set your working directory here
-#setwd(" ")
-# >>> Save the main RData files in the working directory to access them with this code
-
-### **************************************************************
-### OUTLINE ----------------------------------------------------
-### **************************************************************
-
-# 1. PREPARATION
-# 2. OUTPUT TABLES AND FIGURES FOR MAIN PAPER
-# 3. OUTPUT TABLES AND FIGURES FOR EXTENDED DATA
-# 4. OUTPUT TABLES AND FIGURES FOR SUPPLEMENTARY MATERIAL
-
-
-#
-##
-### **************************************************************
-### 1. PREPARATIONS ---------------------------------------------- 
-### **************************************************************
-##
-#
-
 
 ##
 ## DATA AND VARIABLE DESCRIPTIONS  ******************************** 
@@ -144,6 +122,7 @@ require(RColorBrewer)
 require(rgeos)
 require(rnaturalearth)
 require(svglite)
+require(dmetar)
 
 # get world map
 world <- ne_countries(returnclass = "sf")
@@ -165,32 +144,6 @@ citation("rnaturalearth")
 
 # load data
 load("data-raw/Environmental Change and Migration_Meta and Country Data.rdata")
-
-##  
-## DESCRIPTIVE STATISTICS  ***************************************
-##  
-
-prop.table(table(meta$temperature));  table(meta$temperature)
-prop.table(table(meta$precipitation));table(meta$precipitation)
-prop.table(table(meta$rapidonset)); table(meta$rapidonset)
-prop.table(table(meta$internal));table(meta$internal)
-
-
-## ESTIMATING AVERAGE EFFECTS ACROSS ALL COEFFICIENTS Using Meta and Metafor packages
-## see also: https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/
-
-m.pm <- metagen(stancoeff,
-                stanse,
-                data = meta,
-                byvar=paper,
-                studlab = paste(paper),
-                comb.fixed = FALSE,
-                comb.random = TRUE,
-                method.tau = "PM",
-                hakn = T,
-                prediction = TRUE,
-                sm = "COR")
-m.pm
 
 
 ##
@@ -242,13 +195,12 @@ con_time2 <- c("period_start" , "period_end")
 dat <- meta
 wt <- 1/meta$stanse^2
 
-
 ## 
 ## FUNCTIONS TO IMPLEMENT MODELS *****************************
 ##  
 
 func.felm <- function(yname,xnames, fixedeffect.cluster) {
-  controls <- paste(xnames, collapse = "+")
+  controls <- paste(xnames, collapse = " + ")
   fe.c <- paste(fixedeffect.cluster,  collapse = "|" )
   formula <- as.formula(paste(yname,"~",controls, "|", fe.c, sep = ""))
   return(formula)
@@ -260,61 +212,409 @@ func.lmer <- function(yname,xnames) {
   return(formula)
 }
 
+#################################################
+####Reproducing Model and Figure for Figure 3####
+#################################################
+####Model - Analysis 1####
+pred1a <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2))
+pred1a_og <- func.lmer("stancoeff", c(con_base, con_context2))
+
+pred1b_new <- lmer(pred1a, data = dat , weights = wt)
+pred1b_og <- lmer(pred1a_og, data = dat, weights = wt)
+  
+anova(pred1b_new, pred1b_og)
+
+summary(pred1b_new)
+
+pred1b_new_coef <- coefficients(pred1b_new)
+
+dat.predict <- 
+  dat %>% 
+  mutate(predict = 
+           mean(pred1b_new_coef$paper$`(Intercept)`) +
+           mean(pred1b_new_coef$paper$fe_time) + # predictions based on coefficients for models controling for time ...
+           mean(pred1b_new_coef$paper$fe_spatial) + # ... and spatial fixed effects
+           L*mean(pred1b_new_coef$paper$L) +
+           LM*mean(pred1b_new_coef$paper$LM) +
+           UM*mean(pred1b_new_coef$paper$UM) +
+           agr*mean(pred1b_new_coef$paper$agr) +
+           conflict_mepv_5*mean(pred1b_new_coef$paper$conflict_mepv_5))
+
+summary(dat.predict$predict)
+
+####Same Plots from Figure 3 Rerun for New Mixed Effects Model - Analysis 2####
+# plot1, plot2, and plot3 in the below code are the same as the plots from the original paper, but 
+# they are all based on the new predictions from the pred1b_new mixed effects model we changed
+plot1 <- 
+  dat.predict %>% 
+  filter(agr<0.5 & conflict_mepv_5<0.5) %>% 
+  ggplot(aes(y=predict, x=M))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.05, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm", color = "black") +
+  labs(
+    x = "% middle-income countries in sample", 
+    y = "Predicted environmental effect"
+  ) +
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  )+
+  scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.8),
+        axis.text=element_text(size=11.3))
+plot1
+
+plot2 <- 
+  dat.predict %>%
+  filter(L>0.8) %>% 
+  ggplot(aes(y=predict, x=agr))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm",se=T, color="Black")+
+  labs(
+    x = "% agriculturally dependent countries in sample",
+    y = ""
+  )+
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  )+
+  scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.3),
+        axis.text=element_text(size=11.3))
+plot2
+
+plot3 <- dat.predict %>%
+  filter(agr<0.5) %>% 
+  ggplot(aes(y=predict, x=conflict_mepv_5))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm", color="black")+
+  labs(
+    x = "% conflict countries in sample",
+    y = ""
+  ) +
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  ) +
+  scale_y_continuous(breaks=seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.8),
+        axis.text=element_text(size=11.3))
+
+plot3
+
+plot123 <- ggarrange(plot1, plot2, plot3, align="h", nrow = 1, labels = "auto")
+
+plot123    
+ggsave("plots/new-analyses/figure-3_line_plots_sample_composition_effects.jpg", width=15, height=5, dpi=600)
 
 
-#
-##
-### **************************************************************
-### 2. OUTPUT TABLES AND FIGURES FOR MAIN PAPER ------------------
-### **************************************************************
-##
-#
+####Plots with Updated Filters and Outcomes - Analysis 3 (3 analyses in this one)####
+# On top of changes in filters and variables visualized, these predictions are also based on the new 
+# mixed-effects model
+
+# plot_1_new keeps the same filters but looks at the percentage of high-income and 
+# upper middle-income countries in the sample, instead of low-income countries. 
+# Even in richer countries, enivronmental effects of migration can still have an increasing effect. 
+plot1_new <- 
+  dat.predict %>% 
+  mutate(MnL = L + M,
+         HnUM = H + UM) %>% 
+  filter(agr<0.5 & conflict_mepv_5<0.5) %>% 
+  ggplot(aes(y=predict, x=HnUM))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.05, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm", color = "black") +
+  labs(
+    x = "% High-income and upper middle-income countries in sample", 
+    y = "Predicted environmental effect"
+  ) +
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  )+
+  scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.8),
+        axis.text=element_text(size=11.3))
+plot1_new
+
+# plot_2_new looks at the same variables, but the filter changes from the low-income country sample % being > 0.8 to < 0.8. 
+# The obvious takeaway is that the relationships are completely inverse when the sample changes to be mostly non-low-income countries.
+# It seems that the environmental effects decrease. Higher-income countries that are dependent on agriculture, see less of an 
+# environmental effect on migration. There are more opportunities for economic opportunity, separate from environmental factors. 
+plot2_new <- 
+  dat.predict %>%
+  filter(L < 0.8) %>% 
+  ggplot(aes(y=predict, x=agr))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm",se=T, color="Black")+
+  labs(
+    x = "% agriculturally dependent countries in sample",
+    y = ""
+  )+
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  )+
+  scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.3),
+        axis.text=element_text(size=11.3))
+plot2_new
 
 
-##
-## FIGURE 1 - CODE AVAILABLE UPON REQUEST
-##
+# plot3_new is the same as plot3, except that the filter is now agr > 0.5, meaning that we are only focused on the samples where 
+# agriculturally dependent countries is greater than 50%. This emphasizes the idea that agriculturally dependent countries that are 
+# also conflict countries, tend to be very strongly affected by environmental effects on mirgrations 
+plot3_new <- 
+  dat.predict %>%
+  filter(agr > 0.5) %>% 
+  ggplot(aes(y=predict, x=conflict_mepv_5))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm", color="black")+
+  labs(
+    x = "% conflict countries in sample",
+    y = ""
+  ) +
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  ) +
+  scale_y_continuous(breaks=seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.8),
+        axis.text=element_text(size=11.3))
+
+plot3_new
+
+plot123_new <- ggarrange(plot1_new, plot2_new, plot3_new, align="h", nrow = 1, labels = "auto")
+
+plot123_new
+
+ggsave("plots/new-analyses/figure-3_line_plots_sample_composition_effects_NEW_PLOTS.jpg", width=15, height=5, dpi=600)
 
 
-## 
-## TABLE 1 WEIGHTED FELM MODEL: STANDARDIZED COEFF AS OUTCOME -----------------
-## 
+####Map based on new predictions - Analysis 4####
+# The map is based on the new mixed effects model!
+countrydata <- 
+  countrydata %>%   
+  mutate(
+    predictedresponse = 
+      mean(pred1b_new_coef$paper$`(Intercept)`)+
+      mean(pred1b_new_coef$paper$fe_time)+ # predictions based on coefficients for models controling for time ...
+      mean(pred1b_new_coef$paper$fe_spatial)+ #... and spatial fixed effects
+      L*mean(pred1b_new_coef$paper$L)+
+      LM*mean(pred1b_new_coef$paper$LM)+
+      UM*mean(pred1b_new_coef$paper$UM)+
+      agr*mean(pred1b_new_coef$paper$agr),
+    conflict_mepv_5*mean(pred1b_new_coef$paper$conflict_mepv_5),
+    predictedmig = env_change*predictedresponse,
+    predictedmig_cat = cut(predictedmig, breaks = c(-Inf,-0.025,0.025,0.05,0.1,0.15,0.2,Inf))
+  )
 
-## COLUMN 1
-m1a <- func.felm("stancoeff", c(con_base, con_clim1), c("paper", "0", "paper"))
-m1b <- felm(m1a , data = dat, weights=wt)
-summary(m1b)
+summary(countrydata$predictedmig)
 
-## COLUMN 2
-m2a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2), c("paper", "0", "paper"))
-m2b <- felm(m2a , data = dat, weights=wt)
-summary(m2b)
+map_world <- 
+  world %>% 
+  mutate(adm0_a3 = recode(adm0_a3, "SDS"="SSD")) %>% 
+  right_join(countrydata, by = c("adm0_a3" = "iso3c"))
 
-## COLUMN 3
-m3a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2, con_mig), c("paper", "0", "paper"))
-m3b <- felm(m3a , data = dat, weights=wt)
-summary(m3b)
+map_world %>% 
+  ggplot() +
+  geom_sf(aes(fill = predictedmig_cat)) + 
+  coord_sf(crs = "+proj=eqearth") + 
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+  ) +
+  scale_fill_manual(
+    name = "Predicted migration", 
+    values = c(
+      "(-Inf,-0.025]" = "#3f7ad9",
+      "(-0.025,0.025]" = "#dee4fa",
+      "(0.025,0.05]"="#fae0de",
+      "(0.05,0.1]"="#de9999",
+      "(0.1,0.15]"="#db6969",
+      "(0.15,0.2]"="#de4949",
+      "(0.2, Inf]"="#db1414"
+    ),
+    labels = c(
+      "negative [-0.55,-0.025]",
+      "none (-0.025,0.025]",
+      "very low (0.025,0.05]",
+      "low (0.05,0.1]",
+      "moderate (0.1,0.15]",
+      "high (0.15, 0.20]",
+      "very high (0.2, 0.50]"),
+    na.translate = FALSE
+  )
+ggsave("plots/new-analyses/figure-4_map_predicted_environmental_migration_NEW.jpg", width = 10, height=4.5, dpi=600)
 
-## COLUMN 4
-m4a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2, con_mig, con_context1), c("paper", "0" , "paper"))
-m4b <- felm(m4a , data = dat, weights=wt) 
-summary(m4b) 
-
-## COLUMN 5
-m5a <- func.felm("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2), c("paper", "0" , "paper"))
-m5b <- felm(m5a ,  data = dat, weights=wt)
-summary(m5b)
 
 
-## TABLE 1
-stargazer(m1b, m2b, m3b, m4b, m5b,
-          type="html",
-          out="output/table 1_baseline_m1-m5.doc",
-          ci=F, 
-          notes="Test",
-          model.names = T,
-          single.row = T,
-          omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample"))
 
-rm(m1a, m2a, m3a, m4a, m5a, m1b, m2b, m3b, m4b, m5b)
 
+
+
+
+
+
+
+# 
+# 
+# #
+# ##
+# ### **************************************************************
+# ### 2. OUTPUT TABLES AND FIGURES FOR MAIN PAPER ------------------
+# ### **************************************************************
+# ##
+# #
+# 
+# 
+# ##
+# ## FIGURE 1 - CODE AVAILABLE UPON REQUEST
+# ##
+# 
+# 
+# ## 
+# ## TABLE 1 WEIGHTED FELM MODEL: STANDARDIZED COEFF AS OUTCOME -----------------
+# ## 
+# 
+# ## COLUMN 1
+# m1a <- func.felm("stancoeff", c(con_base, con_clim1), c("paper", "0", "paper"))
+# m1b <- felm(m1a , data = dat, weights=wt)
+# summary(m1b)
+# 
+# ## COLUMN 2
+# m2a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2), c("paper", "0", "paper"))
+# m2b <- felm(m2a , data = dat, weights=wt)
+# summary(m2b)
+# 
+# ## COLUMN 3
+# m3a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2, con_mig), c("paper", "0", "paper"))
+# m3b <- felm(m3a , data = dat, weights=wt)
+# summary(m3b)
+# 
+# ## COLUMN 4
+# m4a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2, con_mig, con_context1), c("paper", "0" , "paper"))
+# m4b <- felm(m4a , data = dat, weights=wt) 
+# summary(m4b) 
+# 
+# ## COLUMN 5
+# m5a <- func.felm("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2), c("paper", "0" , "paper"))
+# m5b <- felm(m5a ,  data = dat, weights=wt)
+# summary(m5b)
+# 
+# 
+# ## TABLE 1
+# stargazer(m1b, m2b, m3b, m4b, m5b,
+#           type="html",
+#           out="output/table 1_baseline_m1-m5.doc",
+#           ci=F, 
+#           notes="Test",
+#           model.names = T,
+#           single.row = T,
+#           omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample"))
+# 
+# #rm(m1a, m2a, m3a, m4a, m5a, m1b, m2b, m3b, m4b, m5b)
+# 
+# 
+# ####Modelling Portion####
+# 
+# ## COLUMN 1: Using Mixed Effects Model
+# m1a_clean <- 
+#   m1a %>% 
+#   as.character() %>% 
+#   nth(3) %>%
+#   map(~paste0("~ ", .x)) %>% 
+#   unlist() %>% 
+#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
+#   as.formula()
+# 
+# mem1 <- rma(yi = stancoeff, 
+#                   sei = stanse, 
+#                   data = dat, 
+#                   method = "ML", 
+#                   mods = m1a_clean,
+#                   test = "knha")
+# 
+# m2a_clean <- 
+#   m2a %>% 
+#   as.character() %>% 
+#   nth(3) %>%
+#   map(~paste0("~ ", .x)) %>% 
+#   unlist() %>% 
+#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
+#   as.formula()
+# 
+# mem2 <- rma(yi = stancoeff, 
+#             sei = stanse, 
+#             data = dat, 
+#             method = "ML", 
+#             mods = m2a_clean,
+#             test = "knha")
+# 
+# m3a_clean <- 
+#   m3a %>% 
+#   as.character() %>% 
+#   nth(3) %>%
+#   map(~paste0("~ ", .x)) %>% 
+#   unlist() %>% 
+#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
+#   as.formula()
+# 
+# mem3 <- rma(yi = stancoeff, 
+#             sei = stanse, 
+#             data = dat, 
+#             method = "ML", 
+#             mods = m3a_clean,
+#             test = "knha")
+# 
+# m4a_clean <- 
+#   m4a %>% 
+#   as.character() %>% 
+#   nth(3) %>%
+#   map(~paste0("~ ", .x)) %>% 
+#   unlist() %>% 
+#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
+#   as.formula()
+# 
+# mem4 <- rma(yi = stancoeff, 
+#             sei = stanse, 
+#             data = dat, 
+#             method = "ML", 
+#             mods = m4a_clean,
+#             test = "knha")
+# 
+# m5a_clean <- 
+#   m5a %>% 
+#   as.character() %>% 
+#   nth(3) %>%
+#   map(~paste0("~ ", .x)) %>% 
+#   unlist() %>% 
+#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
+#   as.formula()
+# 
+# mem5 <- rma(yi = stancoeff, 
+#             sei = stanse, 
+#             data = dat, 
+#             method = "ML", 
+#             mods = m5a_clean,
+#             test = "knha")
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
