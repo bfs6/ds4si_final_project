@@ -217,16 +217,32 @@ func.lmer <- function(yname,xnames) {
 #################################################
 ####Model - Analysis 1####
 pred1a <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2))
+  ## The new mixed effects model includes all of the Environmental drivers, Further environmental controls, 
+  ## Migration destination, and Sample composition. The variables used are all of the variables used in the m5b model 
+  ## from the original reproducibility code. 
 pred1a_og <- func.lmer("stancoeff", c(con_base, con_context2))
 
-pred1b_new <- lmer(pred1a, data = dat , weights = wt)
-pred1b_og <- lmer(pred1a_og, data = dat, weights = wt)
+pred1b_new <- lmer(pred1a, data = dat , weights = wt) ## This is the new mixed effects model 
+pred1b_og <- lmer(pred1a_og, data = dat, weights = wt) ## This is the old mixed effects model
   
 anova(pred1b_new, pred1b_og)
 
 summary(pred1b_new)
 
 pred1b_new_coef <- coefficients(pred1b_new)
+
+
+stargazer(pred1b_og, pred1b_new,
+                    type="html",
+                    out="output/new-analyses/table-1_baseline_pred1b_new_vs_pred1b_og.doc",
+                    ci=F,
+                    notes="Test",
+                    model.names = T,
+                    single.row = T
+                    # ,
+                    # omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample")
+          )
+
 
 dat.predict <- 
   dat %>% 
