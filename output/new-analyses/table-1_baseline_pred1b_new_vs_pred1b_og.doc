@@ -5,29 +5,23 @@
 <tr><td style="text-align:left"></td><td colspan="2"><em>linear</em></td></tr>
 <tr><td style="text-align:left"></td><td colspan="2"><em>mixed-effects</em></td></tr>
 <tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td></tr>
-<tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">interaction1</td><td>0.003<sup>**</sup> (0.002)</td><td>-0.0005 (0.002)</td></tr>
-<tr><td style="text-align:left">interaction2</td><td>-0.003 (0.002)</td><td>-0.002 (0.002)</td></tr>
-<tr><td style="text-align:left">interaction3</td><td>0.004<sup>**</sup> (0.002)</td><td>0.003<sup>*</sup> (0.002)</td></tr>
-<tr><td style="text-align:left">fe_time</td><td>-0.008 (0.016)</td><td>0.021 (0.016)</td></tr>
-<tr><td style="text-align:left">fe_spatial</td><td>0.001<sup>***</sup> (0.0002)</td><td>0.001<sup>***</sup> (0.0002)</td></tr>
-<tr><td style="text-align:left">control_sum</td><td>0.0001 (0.0003)</td><td>0.001<sup>**</sup> (0.001)</td></tr>
-<tr><td style="text-align:left">pre_var</td><td></td><td>0.015<sup>***</sup> (0.002)</td></tr>
-<tr><td style="text-align:left">rapidonset</td><td></td><td>0.014<sup>***</sup> (0.002)</td></tr>
-<tr><td style="text-align:left">tem_lev</td><td></td><td>0.017<sup>***</sup> (0.002)</td></tr>
-<tr><td style="text-align:left">tem_var</td><td></td><td>0.013<sup>***</sup> (0.002)</td></tr>
-<tr><td style="text-align:left">env_lag_dum</td><td></td><td>-0.001 (0.001)</td></tr>
-<tr><td style="text-align:left">env_timespan_dum</td><td></td><td>-0.011<sup>***</sup> (0.003)</td></tr>
-<tr><td style="text-align:left">env_other_dum</td><td></td><td>-0.003 (0.002)</td></tr>
-<tr><td style="text-align:left">internal</td><td></td><td>0.006<sup>***</sup> (0.002)</td></tr>
-<tr><td style="text-align:left">dest_low</td><td></td><td>0.057<sup>***</sup> (0.009)</td></tr>
-<tr><td style="text-align:left">dest_high</td><td></td><td>0.020<sup>**</sup> (0.010)</td></tr>
-<tr><td style="text-align:left">dest_ambi</td><td></td><td>0.008 (0.014)</td></tr>
-<tr><td style="text-align:left">L</td><td>-0.097<sup>***</sup> (0.011)</td><td>-0.073<sup>***</sup> (0.011)</td></tr>
-<tr><td style="text-align:left">LM</td><td>0.016<sup>***</sup> (0.005)</td><td>0.014<sup>***</sup> (0.005)</td></tr>
-<tr><td style="text-align:left">UM</td><td>0.046<sup>***</sup> (0.007)</td><td>0.044<sup>***</sup> (0.007)</td></tr>
-<tr><td style="text-align:left">agr</td><td>0.130<sup>***</sup> (0.013)</td><td>0.103<sup>***</sup> (0.013)</td></tr>
-<tr><td style="text-align:left">conflict_mepv_5</td><td>-0.022<sup>***</sup> (0.007)</td><td>-0.023<sup>***</sup> (0.006)</td></tr>
-<tr><td style="text-align:left">Constant</td><td>0.010 (0.015)</td><td>-0.036<sup>**</sup> (0.017)</td></tr>
+<tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Precipitation variability/anomalies</td><td></td><td>0.015<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">Rapid-Onset event</td><td></td><td>0.014<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">Temperature level change</td><td></td><td>0.017<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">Temperature variability/anomalies</td><td></td><td>0.013<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">Environment-migration lag in years</td><td></td><td>-0.001 (0.001)</td></tr>
+<tr><td style="text-align:left">Measurement timeframe > 1 year</td><td></td><td>-0.011<sup>***</sup> (0.003)</td></tr>
+<tr><td style="text-align:left">Other environmental factors controlled for in original model</td><td></td><td>-0.003 (0.002)</td></tr>
+<tr><td style="text-align:left">Internal migration</td><td></td><td>0.006<sup>***</sup> (0.002)</td></tr>
+<tr><td style="text-align:left">International, destination only low/middle-income countries</td><td></td><td>0.057<sup>***</sup> (0.009)</td></tr>
+<tr><td style="text-align:left">International, destination only high-income countries</td><td></td><td>0.020<sup>**</sup> (0.010)</td></tr>
+<tr><td style="text-align:left">International, destination ambiguous</td><td></td><td>0.008 (0.014)</td></tr>
+<tr><td style="text-align:left">% non-OECD countries in sample</td><td>-0.097<sup>***</sup> (0.011)</td><td>-0.073<sup>***</sup> (0.011)</td></tr>
+<tr><td style="text-align:left">% low-income countries in sample</td><td>0.016<sup>***</sup> (0.005)</td><td>0.014<sup>***</sup> (0.005)</td></tr>
+<tr><td style="text-align:left">% low/middle-income countries in sample</td><td>0.046<sup>***</sup> (0.007)</td><td>0.044<sup>***</sup> (0.007)</td></tr>
+<tr><td style="text-align:left">% upper/middle-income countries in sample</td><td>0.130<sup>***</sup> (0.013)</td><td>0.103<sup>***</sup> (0.013)</td></tr>
+<tr><td style="text-align:left">% agriculturally dependent countries in sample</td><td>-0.022<sup>***</sup> (0.007)</td><td>-0.023<sup>***</sup> (0.006)</td></tr>
+<tr><td style="text-align:left">% conflict countries in sample</td><td>0.010 (0.015)</td><td>-0.036<sup>**</sup> (0.017)</td></tr>
 <tr><td colspan="3" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>1,803</td><td>1,803</td></tr>
 <tr><td style="text-align:left">Log Likelihood</td><td>2,294.905</td><td>2,321.092</td></tr>
 <tr><td style="text-align:left">Akaike Inf. Crit.</td><td>-4,561.809</td><td>-4,592.184</td></tr>

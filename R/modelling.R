@@ -215,6 +215,7 @@ func.lmer <- function(yname,xnames) {
 #################################################
 ####Reproducing Model and Figure for Figure 3####
 #################################################
+
 ####Model - Analysis 1####
 pred1a <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2))
   ## The new mixed effects model includes all of the Environmental drivers, Further environmental controls, 
@@ -231,17 +232,25 @@ summary(pred1b_new)
 
 pred1b_new_coef <- coefficients(pred1b_new)
 
-
 stargazer(pred1b_og, pred1b_new,
-                    type="html",
-                    out="output/new-analyses/table-1_baseline_pred1b_new_vs_pred1b_og.doc",
-                    ci=F,
-                    notes="Test",
-                    model.names = T,
-                    single.row = T
-                    # ,
-                    # omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample")
-          )
+          type="html",
+          out="output/new-analyses/table-1_baseline_pred1b_new_vs_pred1b_og.doc",
+          ci=FALSE,
+          notes="Test",
+          model.names = TRUE,
+          single.row = TRUE, 
+          omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample"), 
+          covariate.labels=c("Precipitation variability/anomalies", "Rapid-Onset event", "Temperature level change",
+                             "Temperature variability/anomalies", "Environment-migration lag in years", 
+                             "Measurement timeframe > 1 year", "Other environmental factors controlled for in original model",
+                             "Internal migration", "International, destination only low/middle-income countries", 
+                             "International, destination only high-income countries", "International, destination ambiguous",
+                             "% non-OECD countries in sample", "% low-income countries in sample", 
+                             "% low/middle-income countries in sample", "% upper/middle-income countries in sample", 
+                             "% agriculturally dependent countries in sample", "% conflict countries in sample"),
+          dep.var.labels.include = TRUE
+)
+
 
 
 dat.predict <- 
