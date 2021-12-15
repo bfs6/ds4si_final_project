@@ -122,7 +122,7 @@ require(RColorBrewer)
 require(rgeos)
 require(rnaturalearth)
 require(svglite)
-require(dmetar)
+library(sjPlot)
 
 # get world map
 world <- ne_countries(returnclass = "sf")
@@ -141,6 +141,8 @@ citation("jtools")
 citation("RColorBrewer") 
 citation("rgeos")
 citation("rnaturalearth")
+citation("svglite")
+citation("sjPlot")
 
 # load data
 load("data-raw/Environmental Change and Migration_Meta and Country Data.rdata")
@@ -174,7 +176,9 @@ con_context2 <-c("L", "LM", "UM", "agr", "conflict_mepv_5")
 ## MODELS IN SUPPLEMENTARY MATERIALS
 
 # control variables used in models
-con_control <- c("income_channel", "conflict_channel", "controls_political", "controls_population", "controls_pastmigr", "controls_econlevel", "controls_culture", "controls_geo")
+con_control <- c("income_channel", "conflict_channel", "controls_political", 
+                 "controls_population", "controls_pastmigr", "controls_econlevel",
+                 "controls_culture", "controls_geo")
 
 # Sample size of models
 con_samplesize <- c("countrysample", "yearscovered")
@@ -186,13 +190,13 @@ con_fixedeffects <- c("fe_time", "fe_spatial")
 con_estimation <- c("weights", "lin", "robustness_check")
 
 # Publication characteristics of studies
-con_pub1 <- c( "published1")
+con_pub1 <- c("published1")
 
 # Additional controls for focus on differential time periods
 con_time2 <- c("period_start" , "period_end")
 
 # Defining data and weights
-dat <- meta
+# dat <- meta
 wt <- 1/meta$stanse^2
 
 ## 
@@ -216,60 +220,59 @@ func.lmer <- function(yname,xnames) {
 ####Reproducing Model and Figure for Figure 3####
 #################################################
 
-####Model - Analysis 1####
+####Clean the Data####
+dat <- 
+  meta %>% 
+  mutate(region = 
+           region %>%
+           str_to_title(),
+         region = 
+           case_when(region == "East Asia And The Pacific" ~ "East Asia Pacific",
+                     region %in% c("Latin America Caribbean", "Latin America", "Latin America And Caribbean") ~ "LAC",
+                     region == "Themiddle East And Northafrica" ~ "MENA",
+                     region == "Nonmiddle East And Northafrica" ~ "non-MENA",
+                     region == "Sub-Saharan Africa" ~ "SSA",
+                     region == "Nonlatin America And Caribbean" ~ "non-LAC",
+                     region == "Nonsouth Asia" ~ "non-South Asia",
+                     region == "Noneurope And Central Asia" ~ "non-Europe and Central Asia",
+                     region == "Noneast Asia And The Pacific" ~ "non-East Asia Pacific",
+                     TRUE ~ as.character(region)),
+         region = 
+           region %>% 
+           str_replace_all("East Asia Pacific", "East Asia/Pacific") %>% 
+           str_replace_all("Europe And Central Asia", "Europe/Central Asia") %>% 
+           str_replace_all("Lac", "LAC") %>% 
+           str_replace_all("Mena", "MENA") %>% 
+           str_replace_all("Oecd", "OECD") %>% 
+           str_replace_all("Non", "non") %>% 
+           str_replace_all("Ssa", "SSA") %>% 
+           str_replace_all("Countries In The South", "Global South") %>%
+           str_replace_all("World Without Central And Eastern Europe As Well As The Balkan States And Cyprus", 
+                           "non-Central and Eastern Europe"))
+
+######################
+####Start Analyses####
+######################
+
+####Analysis 1: Add Predictors to Mixed-Effects Model####
+##Create Model
 pred1a <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2))
   ## The new mixed effects model includes all of the Environmental drivers, Further environmental controls, 
   ## Migration destination, and Sample composition. The variables used are all of the variables used in the m5b model 
   ## from the original reproducibility code. 
 pred1a_og <- func.lmer("stancoeff", c(con_base, con_context2))
-
 pred1b_new <- lmer(pred1a, data = dat , weights = wt) ## This is the new mixed effects model 
 pred1b_og <- lmer(pred1a_og, data = dat, weights = wt) ## This is the old mixed effects model
-  
-anova(pred1b_new, pred1b_og)
-
 summary(pred1b_new)
 
-pred1b_new_coef <- coefficients(pred1b_new)
-
-stargazer(pred1b_og, pred1b_new,
-          type="html",
-          out="output/new-analyses/table-1_baseline_pred1b_new_vs_pred1b_og.doc",
-          ci=FALSE,
-          notes="Test",
-          model.names = TRUE,
-          single.row = TRUE, 
-          omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample"), 
-          covariate.labels=c("Precipitation variability/anomalies", "Rapid-Onset event", "Temperature level change",
-                             "Temperature variability/anomalies", "Environment-migration lag in years", 
-                             "Measurement timeframe > 1 year", "Other environmental factors controlled for in original model",
-                             "Internal migration", "International, destination only low/middle-income countries", 
-                             "International, destination only high-income countries", "International, destination ambiguous",
-                             "% non-OECD countries in sample", "% low-income countries in sample", 
-                             "% low/middle-income countries in sample", "% upper/middle-income countries in sample", 
-                             "% agriculturally dependent countries in sample", "% conflict countries in sample"),
-          dep.var.labels.include = TRUE
-)
-
-
-
+##Plots and Predictions
 dat.predict <- 
   dat %>% 
-  mutate(predict = 
-           mean(pred1b_new_coef$paper$`(Intercept)`) +
-           mean(pred1b_new_coef$paper$fe_time) + # predictions based on coefficients for models controling for time ...
-           mean(pred1b_new_coef$paper$fe_spatial) + # ... and spatial fixed effects
-           L*mean(pred1b_new_coef$paper$L) +
-           LM*mean(pred1b_new_coef$paper$LM) +
-           UM*mean(pred1b_new_coef$paper$UM) +
-           agr*mean(pred1b_new_coef$paper$agr) +
-           conflict_mepv_5*mean(pred1b_new_coef$paper$conflict_mepv_5))
+  mutate(predict = predict(pred1b_new, dat))
 
-summary(dat.predict$predict)
-
-####Same Plots from Figure 3 Rerun for New Mixed Effects Model - Analysis 2####
-# plot1, plot2, and plot3 in the below code are the same as the plots from the original paper, but 
-# they are all based on the new predictions from the pred1b_new mixed effects model we changed
+  # Same Plots from Figure 3 Rerun for New Mixed Effects Model
+  # plot1, plot2, and plot3 in the below code are the same as the plots from the original paper, but 
+  # they are all based on the new predictions from the pred1b_new mixed effects model we changed
 plot1 <- 
   dat.predict %>% 
   filter(agr<0.5 & conflict_mepv_5<0.5) %>% 
@@ -336,27 +339,40 @@ plot3
 plot123 <- ggarrange(plot1, plot2, plot3, align="h", nrow = 1, labels = "auto")
 
 plot123    
-ggsave("plots/new-analyses/figure-3_line_plots_sample_composition_effects.jpg", width=15, height=5, dpi=600)
+ggsave("plots/new-analyses/plots_mixed_effects_model_1.jpg", width=15, height=5, dpi=600)
 
 
-####Plots with Updated Filters and Outcomes - Analysis 3 (3 analyses in this one)####
-# On top of changes in filters and variables visualized, these predictions are also based on the new 
-# mixed-effects model
+####Analysis 2: Add Region Variables to Mixed Effects Model####
+##Create Model
+con_location <- c("asia", "lac", "mena", "ssa", "europena")
+me_pred_formula_region <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_location, con_context2))
+me_pred_formula_region <- 
+  paste0(
+    as.character(me_pred_formula_region)[2], 
+    as.character(me_pred_formula_region)[1], 
+    as.character(me_pred_formula_region)[3], sep = " ") %>% 
+  paste0(" + (1 | region)") %>% 
+  as.formula()
+  #The model includes location variables but also adds region as a random effect
+me_lmer_region <- lmer(me_pred_formula_region, data = dat, weights = wt)
 
-# plot_1_new keeps the same filters but looks at the percentage of high-income and 
-# upper middle-income countries in the sample, instead of low-income countries. 
-# Even in richer countries, enivronmental effects of migration can still have an increasing effect. 
-plot1_new <- 
-  dat.predict %>% 
-  mutate(MnL = L + M,
-         HnUM = H + UM) %>% 
+##Plots and Predictions  
+dat.predict2 <- 
+  dat %>% 
+  mutate(predict = predict(me_lmer_region, dat))
+
+# Same Plots from Figure 3 Rerun for New Mixed Effects Model
+# plot1, plot2, and plot3 in the below code are the same as the plots from the original paper, but 
+# they are all based on the new predictions from the pred1b_new mixed effects model we changed
+plot1 <- 
+  dat.predict2 %>% 
   filter(agr<0.5 & conflict_mepv_5<0.5) %>% 
-  ggplot(aes(y=predict, x=HnUM))+
+  ggplot(aes(y=predict, x=M))+
   geom_hline(yintercept = 0) +
   geom_jitter(width=0.05, height=0.01, alpha=0.25)+
   geom_smooth(method="lm", color = "black") +
   labs(
-    x = "% High-income and upper middle-income countries in sample", 
+    x = "% middle-income countries in sample", 
     y = "Predicted environmental effect"
   ) +
   coord_cartesian(
@@ -367,15 +383,11 @@ plot1_new <-
   scale_x_continuous(labels=scales::percent)+
   theme(axis.title=element_text(size=13.8),
         axis.text=element_text(size=11.3))
-plot1_new
+plot1
 
-# plot_2_new looks at the same variables, but the filter changes from the low-income country sample % being > 0.8 to < 0.8. 
-# The obvious takeaway is that the relationships are completely inverse when the sample changes to be mostly non-low-income countries.
-# It seems that the environmental effects decrease. Higher-income countries that are dependent on agriculture, see less of an 
-# environmental effect on migration. There are more opportunities for economic opportunity, separate from environmental factors. 
-plot2_new <- 
-  dat.predict %>%
-  filter(L < 0.8) %>% 
+plot2 <- 
+  dat.predict2 %>%
+  filter(L>0.8) %>% 
   ggplot(aes(y=predict, x=agr))+
   geom_hline(yintercept = 0) +
   geom_jitter(width=0.03, height=0.01, alpha=0.25)+
@@ -392,15 +404,11 @@ plot2_new <-
   scale_x_continuous(labels=scales::percent)+
   theme(axis.title=element_text(size=13.3),
         axis.text=element_text(size=11.3))
-plot2_new
+plot2
 
-
-# plot3_new is the same as plot3, except that the filter is now agr > 0.5, meaning that we are only focused on the samples where 
-# agriculturally dependent countries is greater than 50%. This emphasizes the idea that agriculturally dependent countries that are 
-# also conflict countries, tend to be very strongly affected by environmental effects on mirgrations 
-plot3_new <- 
-  dat.predict %>%
-  filter(agr > 0.5) %>% 
+plot3 <- 
+  dat.predict2 %>%
+  filter(agr<0.5) %>% 
   ggplot(aes(y=predict, x=conflict_mepv_5))+
   geom_hline(yintercept = 0) +
   geom_jitter(width=0.03, height=0.01, alpha=0.25)+
@@ -418,228 +426,289 @@ plot3_new <-
   theme(axis.title=element_text(size=13.8),
         axis.text=element_text(size=11.3))
 
-plot3_new
+plot3
 
-plot123_new <- ggarrange(plot1_new, plot2_new, plot3_new, align="h", nrow = 1, labels = "auto")
+plot123 <- ggarrange(plot1, plot2, plot3, align="h", nrow = 1, labels = "auto")
 
-plot123_new
+plot123    
+ggsave("plots/new-analyses/plots_mixed_effects_model_2.jpg", width=15, height=5, dpi=600)
 
-ggsave("plots/new-analyses/figure-3_line_plots_sample_composition_effects_NEW_PLOTS.jpg", width=15, height=5, dpi=600)
+##Visualize Region and Location Predictors 
+effects_plots2 <- 
+  plot_model(me_lmer_region, terms = con_location, 
+             axis.labels=c("Asia", "Latin America/Caribbean", "Middle East/North Africa", "Sub-Saharan Africa"),
+             show.values=TRUE, show.p=TRUE,
+             title="Effects of Regional Proportions in Meta-Analysis")
+ggsave(plot = effects_plots2, "plots/new-analyses/effects_plots2.jpg", width=7, height=7, dpi=600)
 
 
-####Map based on new predictions - Analysis 4####
-# The map is based on the new mixed effects model!
-countrydata <- 
-  countrydata %>%   
-  mutate(
-    predictedresponse = 
-      mean(pred1b_new_coef$paper$`(Intercept)`)+
-      mean(pred1b_new_coef$paper$fe_time)+ # predictions based on coefficients for models controling for time ...
-      mean(pred1b_new_coef$paper$fe_spatial)+ #... and spatial fixed effects
-      L*mean(pred1b_new_coef$paper$L)+
-      LM*mean(pred1b_new_coef$paper$LM)+
-      UM*mean(pred1b_new_coef$paper$UM)+
-      agr*mean(pred1b_new_coef$paper$agr),
-    conflict_mepv_5*mean(pred1b_new_coef$paper$conflict_mepv_5),
-    predictedmig = env_change*predictedresponse,
-    predictedmig_cat = cut(predictedmig, breaks = c(-Inf,-0.025,0.025,0.05,0.1,0.15,0.2,Inf))
-  )
+####Analysis 3: Filter for Conflict > 0.5####
+##Filter and Create Model
+conflict_data <- 
+  dat %>% 
+  filter(conflict_mepv_5 > 0.5)
+wt_conflict <- 1/conflict_data$stanse^2
+conflict_formula <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_location, con_context2))
+conflict_model <- lmer(conflict_formula, data = conflict_data, weights = wt_conflict)
+summary(conflict_model) 
 
-summary(countrydata$predictedmig)
+##Plots and Predictions 
+dat.predict3 <- 
+  conflict_data %>% 
+  mutate(predict = predict(conflict_model, conflict_data))
 
-map_world <- 
-  world %>% 
-  mutate(adm0_a3 = recode(adm0_a3, "SDS"="SSD")) %>% 
-  right_join(countrydata, by = c("adm0_a3" = "iso3c"))
-
-map_world %>% 
-  ggplot() +
-  geom_sf(aes(fill = predictedmig_cat)) + 
-  coord_sf(crs = "+proj=eqearth") + 
-  theme_minimal() +
-  theme(
-    axis.text = element_blank(),
+# Same Plots from Figure 3 Rerun for New Mixed Effects Model
+# plot1, plot2, and plot3 in the below code are the same as the plots from the original paper, but 
+# they are all based on the new predictions from the pred1b_new mixed effects model we changed
+plot1 <- 
+  dat.predict3 %>% 
+  filter(agr<0.5) %>% 
+  ggplot(aes(y=predict, x=M))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.05, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm", color = "black") +
+  labs(
+    x = "% middle-income countries in sample", 
+    y = "Predicted environmental effect"
   ) +
-  scale_fill_manual(
-    name = "Predicted migration", 
-    values = c(
-      "(-Inf,-0.025]" = "#3f7ad9",
-      "(-0.025,0.025]" = "#dee4fa",
-      "(0.025,0.05]"="#fae0de",
-      "(0.05,0.1]"="#de9999",
-      "(0.1,0.15]"="#db6969",
-      "(0.15,0.2]"="#de4949",
-      "(0.2, Inf]"="#db1414"
-    ),
-    labels = c(
-      "negative [-0.55,-0.025]",
-      "none (-0.025,0.025]",
-      "very low (0.025,0.05]",
-      "low (0.05,0.1]",
-      "moderate (0.1,0.15]",
-      "high (0.15, 0.20]",
-      "very high (0.2, 0.50]"),
-    na.translate = FALSE
-  )
-ggsave("plots/new-analyses/figure-4_map_predicted_environmental_migration_NEW.jpg", width = 10, height=4.5, dpi=600)
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  )+
+  scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.8),
+        axis.text=element_text(size=11.3))
+plot1
+
+plot2 <- 
+  dat.predict3 %>%
+  filter(L>0.8) %>% 
+  ggplot(aes(y=predict, x=agr))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm",se=T, color="Black")+
+  labs(
+    x = "% agriculturally dependent countries in sample",
+    y = ""
+  )+
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  )+
+  scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.3),
+        axis.text=element_text(size=11.3))
+plot2
+
+plot3 <- 
+  dat.predict3 %>%
+  filter(agr<0.5) %>% 
+  ggplot(aes(y=predict, x=conflict_mepv_5))+
+  geom_hline(yintercept = 0) +
+  geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+  geom_smooth(method="lm", color="black")+
+  labs(
+    x = "% conflict countries in sample",
+    y = ""
+  ) +
+  coord_cartesian(
+    ylim = c(-0.05, 0.05), 
+    xlim = c(0, 1)
+  ) +
+  scale_y_continuous(breaks=seq(-0.05,0.05,0.025))+
+  scale_x_continuous(labels=scales::percent)+
+  theme(axis.title=element_text(size=13.8),
+        axis.text=element_text(size=11.3))
+
+plot3
+
+plot123 <- ggarrange(plot1, plot2, plot3, align="h", nrow = 1, labels = "auto")
+
+plot123    
+ggsave("plots/new-analyses/plots_mixed_effects_model_3.jpg", width=15, height=5, dpi=600)
+
+##Visualize Regional Effects
+effects_plots3 <- 
+  plot_model(conflict_model, terms = con_location, 
+             axis.labels=c("Asia", "Latin America/Caribbean", "Middle East/North Africa", "Sub-Saharan Africa"),
+             show.values=TRUE, show.p=TRUE,
+             title="Effects of Regional Proportions in Meta-Analysis, Conflict Model")
+ggsave(plot = effects_plots3, "plots/new-analyses/effects_plots3.jpg", width=7, height=7, dpi=600)
+
+
+####Analysis 4: Add Interaction Terms to Mixed Effects Model#### 
+##Create Model
+interaction_model_formula <- func.lmer("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2, con_location, "agr:conflict_mepv_5", "agr:L", "conflict_mepv_5:L", "agr:conflict_mepv_5:L"))
+interaction_model_formula <- 
+  paste0(
+    as.character(interaction_model_formula)[2], 
+    as.character(interaction_model_formula)[1], 
+    as.character(interaction_model_formula)[3], sep = " ") %>% 
+  paste0(" + (1 | region)") %>% 
+  as.formula()
+interaction_model <- lmer(interaction_model_formula, data = dat, weights = wt)
+summary(interaction_model)
+
+##Visualize Interaction Terms
+full_interaction_term_effects_plot4 <- 
+  plot_model(interaction_model, 
+             title = "Effects of Model w/ Interaction Terms")
+ggsave(plot = full_interaction_term_effects_plot4, "plots/new-analyses/full_interaction_term_effects_plot4.jpg", width=5, height=5, dpi=600)
+
+interaction_effects_model_plot4 <- 
+  plot_model(interaction_model, 
+             terms = c("agr:conflict_mepv_5", "L:agr", "L:conflict_mepv_5", "L:agr:conflict_mepv_5"),
+             show.values = TRUE, show.p = TRUE,
+             axis.labels = c("Agricultural Dependence x Conflict", 
+                             "Low-income Countries x Agricultural Dependence",
+                             "Low-income Countries x Conflict", 
+                             "Low-income Countries x Agricultural Dependence x Conflict"),
+             title = "Interaction Term Effects")
+ggsave(plot = interaction_effects_model_plot4, "plots/new-analyses/interaction_effects_model_plot4.jpg", width=7, height=7, dpi=600)
+
+
+####Analysis 5: Build Stepwise LM Model####
+##Create Model
+lm_pred_formula <- paste0("stancoeff ~ ", paste0(c(con_base,  con_clim1, con_clim2, con_mig, con_context2, con_location, "agr:conflict_mepv_5", "agr:L", "conflict_mepv_5:L", "agr:conflict_mepv_5:L"), collapse = " + "), " + paper + region")
+lm_version <- lm(formula = lm_pred_formula, data = dat, weights = wt)
+step_lm_version <- step(lm_version)
+
+##Visualize Model
+effects_plots5 <- 
+  plot_model(step_lm_version, 
+             title = "Effects of Stepwise Linear Model", 
+             rm.terms = c("paperGhimire et al. 2015"))
+effects_plots5_v2 <- 
+  plot_model(step_lm_version, 
+             title = "Effects of Stepwise Linear Model w/o Region and Paper",
+             terms = str_subset(names(step_lm_version$coefficients), 
+                                "^region|^paper|^fe|^interaction|^control", negate = TRUE),
+             axis.labels = c("Precipitation variability/anomalies", "Rapid-Onset event", "Temperature level change",
+                             "Temperature variability/anomalies", "Measurement timeframe > 1 year", 
+                             "Internal migration", "International, destination only low/middle-income countries",
+                             "% low-income countries in sample", "% low/middle-income countries in sample", 
+                             "% agriculturally dependent countries in sample", "% conflict countries in sample",
+                             "% Asian countries in sample", "% Latin American/Caribbean countries in sample", 
+                             "% Middle Eastern/North African countries in sample", 
+                             "Agricultural Dependence x Conflict", "Low-income Countries x Agricultural Dependence",
+                             "Low-income Countries x Conflict", "Low-income Countries x Agricultural Dependence x Conflict"))
+ggsave(plot = effects_plots5, "plots/new-analyses/effects_plots5.jpg", width = 8, height = 7, dpi = 600)
+ggsave(plot = effects_plots5_v2, "plots/new-analyses/effects_plots5_v2.jpg", width = 7, height = 7, dpi = 600)
+
+
+####Visualize All Models in Stargazer Table####
+stargazer(pred1b_og, pred1b_new, me_lmer_region, conflict_model, interaction_model,
+          type="html",
+          out="output/new-analyses/stargazer_table.doc",
+          ci=FALSE,
+          title = "Comparison of Mixed Effects Models",
+          model.names = TRUE,
+          single.row = TRUE, 
+          omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample"), 
+          covariate.labels=c("Precipitation variability/anomalies", "Rapid-Onset event", "Temperature level change",
+                             "Temperature variability/anomalies", "Environment-migration lag in years",
+                             "Measurement timeframe > 1 year", "Other environmental factors controlled for in original model",
+                             "Internal migration", "International, destination only low/middle-income countries",
+                             "International, destination only high-income countries", "International, destination ambiguous",
+                             "% Asian countries in sample", "% Latin American/Caribbean countries in sample", 
+                             "% Middle Eastern/North African countries in sample", "% Sub-Saharan African countries in sample",
+                             "Agricultural Dependence x Conflict", "Low-income Countries x Agricultural Dependence",
+                             "Low-income Countries x Conflict", "Low-income Countries x Agricultural Dependence x Conflict",
+                             "% low-income countries in sample", "% low/middle-income countries in sample", 
+                             "% upper/middle-income countries in sample", "% agriculturally dependent countries in sample", 
+                             "% conflict countries in sample", "Intercept"),
+          dep.var.labels.include = TRUE
+)
 
 
 
 
-
-
-
-
-
-
-
+# ####Plots with Updated Filters and Outcomes - Analysis 3 (3 analyses in this one)####
+# # On top of changes in filters and variables visualized, these predictions are also based on the new 
+# # mixed-effects model
+# 
+# # plot_1_new keeps the same filters but looks at the percentage of high-income and 
+# # upper middle-income countries in the sample, instead of low-income countries. 
+# # Even in richer countries, enivronmental effects of migration can still have an increasing effect. 
+# plot1_new <- 
+#   dat.predict %>% 
+#   mutate(MnL = L + M,
+#          HnUM = H + UM) %>% 
+#   filter(agr<0.5 & conflict_mepv_5<0.5) %>% 
+#   ggplot(aes(y=predict, x=HnUM))+
+#   geom_hline(yintercept = 0) +
+#   geom_jitter(width=0.05, height=0.01, alpha=0.25)+
+#   geom_smooth(method="lm", color = "black") +
+#   labs(
+#     x = "% High-income and upper middle-income countries in sample", 
+#     y = "Predicted environmental effect"
+#   ) +
+#   coord_cartesian(
+#     ylim = c(-0.05, 0.05), 
+#     xlim = c(0, 1)
+#   )+
+#   scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+#   scale_x_continuous(labels=scales::percent)+
+#   theme(axis.title=element_text(size=13.8),
+#         axis.text=element_text(size=11.3))
+# plot1_new
+# 
+# # plot_2_new looks at the same variables, but the filter changes from the low-income country sample % being > 0.8 to < 0.8. 
+# # The obvious takeaway is that the relationships are completely inverse when the sample changes to be mostly non-low-income countries.
+# # It seems that the environmental effects decrease. Higher-income countries that are dependent on agriculture, see less of an 
+# # environmental effect on migration. There are more opportunities for economic opportunity, separate from environmental factors. 
+# plot2_new <- 
+#   dat.predict %>%
+#   filter(L < 0.8) %>% 
+#   ggplot(aes(y=predict, x=agr))+
+#   geom_hline(yintercept = 0) +
+#   geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+#   geom_smooth(method="lm",se=T, color="Black")+
+#   labs(
+#     x = "% agriculturally dependent countries in sample",
+#     y = ""
+#   )+
+#   coord_cartesian(
+#     ylim = c(-0.05, 0.05), 
+#     xlim = c(0, 1)
+#   )+
+#   scale_y_continuous(breaks = seq(-0.05,0.05,0.025))+
+#   scale_x_continuous(labels=scales::percent)+
+#   theme(axis.title=element_text(size=13.3),
+#         axis.text=element_text(size=11.3))
+# plot2_new
 # 
 # 
-# #
-# ##
-# ### **************************************************************
-# ### 2. OUTPUT TABLES AND FIGURES FOR MAIN PAPER ------------------
-# ### **************************************************************
-# ##
-# #
+# # plot3_new is the same as plot3, except that the filter is now agr > 0.5, meaning that we are only focused on the samples where 
+# # agriculturally dependent countries is greater than 50%. This emphasizes the idea that agriculturally dependent countries that are 
+# # also conflict countries, tend to be very strongly affected by environmental effects on mirgrations 
+# plot3_new <- 
+#   dat.predict %>%
+#   filter(agr > 0.5) %>% 
+#   ggplot(aes(y=predict, x=conflict_mepv_5))+
+#   geom_hline(yintercept = 0) +
+#   geom_jitter(width=0.03, height=0.01, alpha=0.25)+
+#   geom_smooth(method="lm", color="black")+
+#   labs(
+#     x = "% conflict countries in sample",
+#     y = ""
+#   ) +
+#   coord_cartesian(
+#     ylim = c(-0.05, 0.05), 
+#     xlim = c(0, 1)
+#   ) +
+#   scale_y_continuous(breaks=seq(-0.05,0.05,0.025))+
+#   scale_x_continuous(labels=scales::percent)+
+#   theme(axis.title=element_text(size=13.8),
+#         axis.text=element_text(size=11.3))
 # 
+# plot3_new
 # 
-# ##
-# ## FIGURE 1 - CODE AVAILABLE UPON REQUEST
-# ##
+# plot123_new <- ggarrange(plot1_new, plot2_new, plot3_new, align="h", nrow = 1, labels = "auto")
 # 
+# plot123_new
 # 
-# ## 
-# ## TABLE 1 WEIGHTED FELM MODEL: STANDARDIZED COEFF AS OUTCOME -----------------
-# ## 
-# 
-# ## COLUMN 1
-# m1a <- func.felm("stancoeff", c(con_base, con_clim1), c("paper", "0", "paper"))
-# m1b <- felm(m1a , data = dat, weights=wt)
-# summary(m1b)
-# 
-# ## COLUMN 2
-# m2a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2), c("paper", "0", "paper"))
-# m2b <- felm(m2a , data = dat, weights=wt)
-# summary(m2b)
-# 
-# ## COLUMN 3
-# m3a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2, con_mig), c("paper", "0", "paper"))
-# m3b <- felm(m3a , data = dat, weights=wt)
-# summary(m3b)
-# 
-# ## COLUMN 4
-# m4a <- func.felm("stancoeff", c(con_base, con_clim1, con_clim2, con_mig, con_context1), c("paper", "0" , "paper"))
-# m4b <- felm(m4a , data = dat, weights=wt) 
-# summary(m4b) 
-# 
-# ## COLUMN 5
-# m5a <- func.felm("stancoeff", c(con_base,  con_clim1, con_clim2, con_mig, con_context2), c("paper", "0" , "paper"))
-# m5b <- felm(m5a ,  data = dat, weights=wt)
-# summary(m5b)
-# 
-# 
-# ## TABLE 1
-# stargazer(m1b, m2b, m3b, m4b, m5b,
-#           type="html",
-#           out="output/table 1_baseline_m1-m5.doc",
-#           ci=F, 
-#           notes="Test",
-#           model.names = T,
-#           single.row = T,
-#           omit = c("interaction", "fe_time", "fe_spatial", "control_sum", "yearscovered", "countrysample"))
-# 
-# #rm(m1a, m2a, m3a, m4a, m5a, m1b, m2b, m3b, m4b, m5b)
-# 
-# 
-# ####Modelling Portion####
-# 
-# ## COLUMN 1: Using Mixed Effects Model
-# m1a_clean <- 
-#   m1a %>% 
-#   as.character() %>% 
-#   nth(3) %>%
-#   map(~paste0("~ ", .x)) %>% 
-#   unlist() %>% 
-#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
-#   as.formula()
-# 
-# mem1 <- rma(yi = stancoeff, 
-#                   sei = stanse, 
-#                   data = dat, 
-#                   method = "ML", 
-#                   mods = m1a_clean,
-#                   test = "knha")
-# 
-# m2a_clean <- 
-#   m2a %>% 
-#   as.character() %>% 
-#   nth(3) %>%
-#   map(~paste0("~ ", .x)) %>% 
-#   unlist() %>% 
-#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
-#   as.formula()
-# 
-# mem2 <- rma(yi = stancoeff, 
-#             sei = stanse, 
-#             data = dat, 
-#             method = "ML", 
-#             mods = m2a_clean,
-#             test = "knha")
-# 
-# m3a_clean <- 
-#   m3a %>% 
-#   as.character() %>% 
-#   nth(3) %>%
-#   map(~paste0("~ ", .x)) %>% 
-#   unlist() %>% 
-#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
-#   as.formula()
-# 
-# mem3 <- rma(yi = stancoeff, 
-#             sei = stanse, 
-#             data = dat, 
-#             method = "ML", 
-#             mods = m3a_clean,
-#             test = "knha")
-# 
-# m4a_clean <- 
-#   m4a %>% 
-#   as.character() %>% 
-#   nth(3) %>%
-#   map(~paste0("~ ", .x)) %>% 
-#   unlist() %>% 
-#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
-#   as.formula()
-# 
-# mem4 <- rma(yi = stancoeff, 
-#             sei = stanse, 
-#             data = dat, 
-#             method = "ML", 
-#             mods = m4a_clean,
-#             test = "knha")
-# 
-# m5a_clean <- 
-#   m5a %>% 
-#   as.character() %>% 
-#   nth(3) %>%
-#   map(~paste0("~ ", .x)) %>% 
-#   unlist() %>% 
-#   str_replace_all(" [|] paper [|] 0 [|] paper", "") %>%
-#   as.formula()
-# 
-# mem5 <- rma(yi = stancoeff, 
-#             sei = stanse, 
-#             data = dat, 
-#             method = "ML", 
-#             mods = m5a_clean,
-#             test = "knha")
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
+# ggsave("plots/new-analyses/figure-3_line_plots_sample_composition_effects_NEW_PLOTS.jpg", width=15, height=5, dpi=600)
 # 

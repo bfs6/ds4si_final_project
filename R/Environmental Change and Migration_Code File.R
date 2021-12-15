@@ -593,7 +593,7 @@ within
 plot1 <- ggarrange(density, align = "h", labels = c("a"))
 plot1
 
-plot2 <-ggarrange(between, within, align = "h", labels = c("b", "c"))
+plot2 <- ggarrange(between, within, align = "h", labels = c("b", "c"))
 plot2
 
 ggarrange(plot1, plot2, nrow=2, align = "h")
@@ -1251,7 +1251,8 @@ dfCI = data.frame(ll95, ul95, ll99, ul99, se.seq, estimate, meanll95, meanul95)
 
 
  
-fp <- meta %>% 
+fp <- 
+  meta %>% 
   filter(abs(stancoeff)<=10) %>% 
   ggplot(aes(y = stanse, x = stancoeff)) +
   geom_point(shape = 1, size=1.5) +
